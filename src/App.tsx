@@ -1,25 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import logoImg from './assets/logo.png';
 
 import DeleteConfirmation from './components/DeleteConfirmation';
-import Modal, { ModalRef } from './components/Modal';
+// import Modal, { ModalRef } from './components/Modal';
 import Places from './components/Places';
 
 import { AVAILABLE_PLACES } from './data/available_places.ts';
 
 import { Place } from './models/Place.ts';
 
-
 import PlacesLocalStorage from './services/localStorage/PlacesLocalStorage.ts';
 
 import { sortPlacesByDistance } from './utils/loc.ts';
+import AlternativeModal from './components/AlternativeModal.tsx';
 
 // Browser localStorage
 const placesLocalStorage = PlacesLocalStorage.getInstance();
 
 function App() {
-  const modal = useRef<ModalRef>(null);
+  // const modal = useRef<ModalRef>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const selectedPlace = useRef<string>('');
   const [availablePlaces, setAvailablePlaces] = useState<Place[]>([]);
   const [pickedPlaces, setPickedPlaces] = useState<Place[]>(
@@ -39,12 +40,14 @@ function App() {
   }, []); // With dependencies array empty the block will only be executed on the first render.
 
   function handleStartRemovePlace(id: string) {
-    modal?.current?.open();
+    // modal?.current?.open();
+    setIsModalOpen(true);
     selectedPlace.current = id;
   }
 
   function handleStopRemovePlace() {
-    modal?.current?.close();
+    // modal?.current?.close();
+    setIsModalOpen(false);
   }
 
   function handleSelectPlace(id: string) {
@@ -60,24 +63,32 @@ function App() {
     placesLocalStorage.addPlace(id);
   }
 
-  function handleRemovePlace() {
+  const handleRemovePlace = useCallback(() => {
     setPickedPlaces((prevPickedPlaces) =>
       prevPickedPlaces.filter((place) => place.id !== selectedPlace?.current)
     );
-    modal?.current?.close();
+    // modal?.current?.close();
+    setIsModalOpen(false);
 
     // Browser localStorage
     placesLocalStorage.removePlace(selectedPlace.current);
-  }
+  }, []);
 
   return (
     <>
-      <Modal ref={modal}>
+      {/* <Modal ref={modal}>
         <DeleteConfirmation
           onCancel={handleStopRemovePlace}
           onConfirm={handleRemovePlace}
         />
-      </Modal>
+      </Modal> */}
+
+      <AlternativeModal open={isModalOpen}>
+        <DeleteConfirmation
+          onCancel={handleStopRemovePlace}
+          onConfirm={handleRemovePlace}
+        />
+      </AlternativeModal>
 
       <header>
         <img src={logoImg} alt="Stylized globe" />
