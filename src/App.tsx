@@ -10,15 +10,22 @@ import { AVAILABLE_PLACES } from './data/available_places.ts';
 
 import { Place } from './models/Place.ts';
 
+
+import PlacesLocalStorage from './services/localStorage/PlacesLocalStorage.ts';
+
 import { sortPlacesByDistance } from './utils/loc.ts';
+
+// Browser localStorage
+const placesLocalStorage = PlacesLocalStorage.getInstance();
 
 function App() {
   const modal = useRef<ModalRef>(null);
   const selectedPlace = useRef<string>('');
   const [availablePlaces, setAvailablePlaces] = useState<Place[]>([]);
-  const [pickedPlaces, setPickedPlaces] = useState<Place[]>([]);
+  const [pickedPlaces, setPickedPlaces] = useState<Place[]>(
+    placesLocalStorage.storedPlaces
+  );
 
-  // Only Executed on the first render.
   useEffect(() => {
     navigator.geolocation.getCurrentPosition((position) => {
       const sortedPlaces = sortPlacesByDistance(
@@ -29,7 +36,7 @@ function App() {
 
       setAvailablePlaces(sortedPlaces);
     });
-  }, []);
+  }, []); // With dependencies array empty the block will only be executed on the first render.
 
   function handleStartRemovePlace(id: string) {
     modal?.current?.open();
@@ -48,6 +55,9 @@ function App() {
       const place = AVAILABLE_PLACES.find((place) => place.id === id)!;
       return [place, ...prevPickedPlaces];
     });
+
+    // Browser localStorage
+    placesLocalStorage.addPlace(id);
   }
 
   function handleRemovePlace() {
@@ -55,6 +65,9 @@ function App() {
       prevPickedPlaces.filter((place) => place.id !== selectedPlace?.current)
     );
     modal?.current?.close();
+
+    // Browser localStorage
+    placesLocalStorage.removePlace(selectedPlace.current);
   }
 
   return (
